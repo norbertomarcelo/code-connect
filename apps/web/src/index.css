@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --color-page: #171d1f;
+  --color-surface: #0d1214;
+  --color-primary: #81fe88;
+  --color-input: #888888;
+  --color-offwhite: #e1e1e1;
+  --color-muted: #bcbcbc;
+
+  --font-sans: "Prompt", sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--color-page);
+  color: var(--color-offwhite);
+  font-family: var(--font-sans);
+}

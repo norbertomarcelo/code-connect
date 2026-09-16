@@ -6,8 +6,10 @@ describe('AuthTemplate', () => {
   it('renders the banner, heading, subtitle, content and footer', () => {
     render(
       <AuthTemplate
-        bannerSrc="/banner-login.png"
+        bannerSrc="/banner-login.webp"
         bannerAlt="Code Connect"
+        bannerWidth={407}
+        bannerHeight={628}
         title="Login"
         subtitle="Boas-vindas! Faça seu login."
         footer={<p>rodapé</p>}
@@ -18,7 +20,7 @@ describe('AuthTemplate', () => {
 
     expect(screen.getByRole('img', { name: 'Code Connect' })).toHaveAttribute(
       'src',
-      '/banner-login.png',
+      '/banner-login.webp',
     )
     expect(
       screen.getByRole('heading', { name: 'Login' }),

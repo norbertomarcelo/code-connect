@@ -16,8 +16,10 @@ function handleSocialSelect(provider: SocialProvider) {
 export function LoginPage() {
   return (
     <AuthTemplate
-      bannerSrc="/banner-login.png"
+      bannerSrc="/banner-login.webp"
       bannerAlt="Code Connect"
+      bannerWidth={407}
+      bannerHeight={628}
       title="Login"
       subtitle="Boas-vindas! Faça seu login."
       footer={

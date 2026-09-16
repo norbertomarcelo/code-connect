@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 interface AuthTemplateProps {
   bannerSrc: string
   bannerAlt: string
+  bannerWidth: number
+  bannerHeight: number
   title: string
   subtitle: string
   children: ReactNode
@@ -12,6 +14,8 @@ interface AuthTemplateProps {
 export function AuthTemplate({
   bannerSrc,
   bannerAlt,
+  bannerWidth,
+  bannerHeight,
   title,
   subtitle,
   children,
@@ -23,6 +27,9 @@ export function AuthTemplate({
         <img
           src={bannerSrc}
           alt={bannerAlt}
+          width={bannerWidth}
+          height={bannerHeight}
+          fetchPriority="high"
           className="h-48 w-full object-cover md:h-full"
         />
 

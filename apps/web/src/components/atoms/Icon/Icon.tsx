@@ -1,4 +1,4 @@
-export type IconName = 'arrow-right' | 'clipboard'
+export type IconName = 'arrow-right' | 'clipboard' | 'login'
 
 interface IconProps {
   name: IconName
@@ -35,6 +35,12 @@ const paths: Record<IconName, React.ReactNode> = {
         fill="none"
       />
     </>
+  ),
+  login: (
+    <path
+      d="M11 7l-1.41 1.41L12.17 11H3v2h9.17l-2.58 2.59L11 17l5-5-5-5zm9-3h-8v2h8v12h-8v2h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"
+      fill="currentColor"
+    />
   ),
 }
 

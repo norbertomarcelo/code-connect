@@ -9,7 +9,7 @@ pnpm workspace monorepo (`apps/*`) with two independent apps, both still close t
 - `apps/api` — NestJS 12 backend (Express platform), listens on `PORT` (default 3000)
 - `apps/web` — React 19 + Vite 8 frontend
 
-The apps share no code and no workspace packages. The web app does not call the API yet, and no Vite proxy or CORS is set up.
+The apps share no code and no workspace packages. The web app calls the API through axios, via a Vite dev proxy (see "Web ↔ API integration"); the API has no CORS configured.
 
 ## Commands
 
@@ -89,6 +89,15 @@ src/pages/     # templates filled with real data and state
 **Tailwind for styling.** Style with Tailwind utility classes in JSX. Don't add CSS files, CSS modules, or inline `style` objects for anything Tailwind can express. `App.css` and most of `index.css` are template leftovers; remove them as components replace them, and keep only the Tailwind import and true globals in `index.css`. For variants, map props to class names instead of building class strings by concatenation.
 
 **Every component needs a test.** Each component ships with a `*.test.tsx` next to it that covers its essential use: it renders with the typical props, shows the content it should, and responds to its main interaction (click, input, submit) by calling the right callback or changing what's shown. Query the way a user would (`getByRole`, `getByLabelText`) instead of by class names or test IDs, and don't test Tailwind classes or implementation details. A component without a test is not done.
+
+## Web ↔ API integration (`apps/web`)
+
+- **Proxy, not CORS.** `vite.config.ts` forwards `/api/*` to `http://localhost:3000` with the `/api` prefix stripped (`/api/auth/login` → `/auth/login`). The axios client uses `baseURL: import.meta.env.VITE_API_URL ?? '/api'`; set `VITE_API_URL` (e.g. in an untracked `apps/web/.env.local`) only when the app is served without the dev proxy, such as `vite preview`.
+- **`src/lib/`** holds the transport layer, outside Atomic Design: `session.ts` (token storage) and `api/` (`client.ts` axios instance and interceptors, `errors.ts`, `types.ts`, and one module per resource: `auth.ts`, `users.ts`). Pages and components never see an `AxiosError`: the response interceptor turns every failure into an `ApiError` (`kind`, `status`, `messages`), flattening Nest's three error body shapes. `types.ts` mirrors the Nest DTOs.
+- **`src/auth/`** holds `AuthProvider`, `useAuth`, `ProtectedRoute` and `messages.ts` (ApiError → pt-BR copy). It sits outside `src/components/` on purpose: these render no UI of their own and must import `src/lib/`, which would break the "never import upward" rule. The provider, context and hook live in separate files because `react/only-export-components` would otherwise break fast refresh.
+- **Session.** The token is stored under `code-connect.session`, in `localStorage` when "Lembrar-me" is checked and in `sessionStorage` otherwise. `session.ts` checks `expiresAt` client-side, and a 401 on any request except `/auth/login` clears the session, which flips the provider to `anonymous`. There is no refresh token: the JWT lasts 1h.
+- **Registration does not log in.** `POST /users` returns no token, so `SignupPage` redirects to `/login` with `{ notice, email, remember }` in the router state.
+- **Testing.** No MSW. Component and page tests use `src/test/renderWithAuth.tsx`, which stubs the auth context (override pieces with `auth: { signIn }`). Tests that need the real provider `vi.mock` our own `src/lib/api/auth` and `src/lib/api/users` modules, not axios. Throw `ApiError` (from `src/lib/api/errors.ts`, deliberately a separate module so it is never mocked) to simulate failures.
 
 ## Backend rules (`apps/api`): REST
 

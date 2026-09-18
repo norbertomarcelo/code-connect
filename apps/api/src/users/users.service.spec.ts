@@ -1,9 +1,9 @@
 import { ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { sql } from 'drizzle-orm';
 import { createTestDatabase } from '../../test/support/test-database.js';
 import { DRIZZLE } from '../database/database.constants.js';
 import { UsersService } from './users.service.js';
+import { resetDatabase } from '../../test/support/reset-database.js';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -18,7 +18,7 @@ describe('UsersService', () => {
   });
 
   beforeEach(async () => {
-    await testDb.db.execute(sql`TRUNCATE users`);
+    await resetDatabase(testDb.db);
     const module: TestingModule = await Test.createTestingModule({
       providers: [UsersService, { provide: DRIZZLE, useValue: testDb.db }],
     }).compile();
@@ -62,7 +62,9 @@ describe('UsersService', () => {
       password: 'super-secret-1',
     });
 
-    expect((await service.findByEmail('ada@example.com'))?.name).toBe('Ada Lovelace');
+    expect((await service.findByEmail('ada@example.com'))?.name).toBe(
+      'Ada Lovelace',
+    );
     expect(await service.findByEmail('missing@example.com')).toBeUndefined();
   });
 });

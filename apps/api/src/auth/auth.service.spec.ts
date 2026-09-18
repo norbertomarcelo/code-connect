@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
-import { sql } from 'drizzle-orm';
 import { createTestDatabase } from '../../test/support/test-database.js';
 import { DRIZZLE } from '../database/database.constants.js';
 import { UsersService } from '../users/users.service.js';
 import { AuthService } from './auth.service.js';
+import { resetDatabase } from '../../test/support/reset-database.js';
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -20,7 +20,7 @@ describe('AuthService', () => {
   });
 
   beforeEach(async () => {
-    await testDb.db.execute(sql`TRUNCATE users`);
+    await resetDatabase(testDb.db);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,

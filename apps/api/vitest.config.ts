@@ -9,5 +9,8 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.spec.ts'],
+    // Every service spec boots its own in-process Postgres (PGlite); starting
+    // several at once on a busy machine can exceed the 10s default.
+    hookTimeout: 60_000,
   },
 });

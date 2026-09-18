@@ -89,7 +89,7 @@ src/pages/     # templates filled with real data and state
 - Each component gets its own folder: `atoms/Button/Button.tsx`, `Button.test.tsx`, and an `index.ts` that re-exports it.
 - Atoms and molecules are presentational. They receive data through props and don't fetch data or read global state. Data and side effects belong in pages, or in organisms when needed.
 
-**Tailwind for styling.** Style with Tailwind utility classes in JSX. Don't add CSS files, CSS modules, or inline `style` objects for anything Tailwind can express. `App.css` and most of `index.css` are template leftovers; remove them as components replace them, and keep only the Tailwind import and true globals in `index.css`. For variants, map props to class names instead of building class strings by concatenation.
+**Tailwind for styling.** Style with Tailwind utility classes in JSX. Don't add CSS files, CSS modules, or inline `style` objects for anything Tailwind can express. Keep `index.css` to the Tailwind import, the `@theme` tokens and true globals. For variants, map props to class names instead of building class strings by concatenation.
 
 **Every component needs a test.** Each component ships with a `*.test.tsx` next to it that covers its essential use: it renders with the typical props, shows the content it should, and responds to its main interaction (click, input, submit) by calling the right callback or changing what's shown. Query the way a user would (`getByRole`, `getByLabelText`) instead of by class names or test IDs, and don't test Tailwind classes or implementation details. A component without a test is not done.
 

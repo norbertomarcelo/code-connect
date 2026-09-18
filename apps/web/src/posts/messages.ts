@@ -8,6 +8,9 @@ const GENERIC_COMMENT = 'Não foi possível enviar o comentário. Tente novament
 export function postsErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return GENERIC_LOAD
 
+  // A malformed id (400) is, for the reader, a post that does not exist.
+  if (error.status === 400) return 'Publicação não encontrada.'
+
   switch (error.kind) {
     case 'not-found':
       return 'Publicação não encontrada.'

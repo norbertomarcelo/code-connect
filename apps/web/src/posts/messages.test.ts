@@ -13,6 +13,12 @@ describe('postsErrorMessage', () => {
     )
   })
 
+  it('treats a malformed id as a missing post', () => {
+    expect(postsErrorMessage(new ApiError('unknown', 400, ['x']))).toBe(
+      'Publicação não encontrada.',
+    )
+  })
+
   it('names a lost connection and falls back for anything else', () => {
     expect(postsErrorMessage(new ApiError('network', null, ['x']))).toMatch(
       /conectar ao servidor/,

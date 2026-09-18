@@ -11,17 +11,29 @@ export interface SignupFormValues {
   remember: boolean
 }
 
-interface SignupFormProps {
-  onSubmit: (values: SignupFormValues) => void
-}
-
 interface FormErrors {
   name?: string
   email?: string
   password?: string
 }
 
-export function SignupForm({ onSubmit }: SignupFormProps) {
+interface SignupFormProps {
+  onSubmit: (values: SignupFormValues) => void
+  isSubmitting?: boolean
+  submitError?: string | null
+  /** Errors reported by the API, e.g. a duplicate email (409). */
+  fieldErrors?: FormErrors
+}
+
+const emailPattern = /^\S+@\S+\.\S+$/
+const MIN_PASSWORD_LENGTH = 8
+
+export function SignupForm({
+  onSubmit,
+  isSubmitting = false,
+  submitError,
+  fieldErrors,
+}: SignupFormProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -37,9 +49,13 @@ export function SignupForm({ onSubmit }: SignupFormProps) {
     }
     if (!email.trim()) {
       nextErrors.email = 'Informe seu email'
+    } else if (!emailPattern.test(email.trim())) {
+      nextErrors.email = 'Informe um email válido'
     }
     if (!password) {
       nextErrors.password = 'Informe uma senha'
+    } else if (password.length < MIN_PASSWORD_LENGTH) {
+      nextErrors.password = 'A senha deve ter ao menos 8 caracteres'
     }
 
     setErrors(nextErrors)
@@ -47,7 +63,7 @@ export function SignupForm({ onSubmit }: SignupFormProps) {
       return
     }
 
-    onSubmit({ name, email, password, remember })
+    onSubmit({ name: name.trim(), email: email.trim(), password, remember })
   }
 
   return (
@@ -57,7 +73,7 @@ export function SignupForm({ onSubmit }: SignupFormProps) {
         placeholder="Nome completo"
         value={name}
         onChange={(event) => setName(event.target.value)}
-        error={errors.name}
+        error={errors.name ?? fieldErrors?.name}
       />
       <FormField
         label="Email"
@@ -65,14 +81,14 @@ export function SignupForm({ onSubmit }: SignupFormProps) {
         placeholder="Digite seu email"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
-        error={errors.email}
+        error={errors.email ?? fieldErrors?.email}
       />
       <FormField
         label="Senha"
         type="password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
-        error={errors.password}
+        error={errors.password ?? fieldErrors?.password}
       />
 
       <Checkbox
@@ -82,8 +98,14 @@ export function SignupForm({ onSubmit }: SignupFormProps) {
         Lembrar-me
       </Checkbox>
 
-      <Button type="submit" icon="arrow-right" fullWidth>
-        Cadastrar
+      {submitError ? (
+        <p role="alert" className="text-sm text-danger">
+          {submitError}
+        </p>
+      ) : null}
+
+      <Button type="submit" icon="arrow-right" fullWidth disabled={isSubmitting}>
+        {isSubmitting ? 'Cadastrando...' : 'Cadastrar'}
       </Button>
     </form>
   )

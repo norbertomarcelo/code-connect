@@ -10,7 +10,7 @@ describe('LoginPage', () => {
     expect(
       screen.getByRole('heading', { name: 'Login' }),
     ).toBeInTheDocument()
-    expect(screen.getByLabelText('Email ou usuário')).toBeInTheDocument()
+    expect(screen.getByLabelText('Email')).toBeInTheDocument()
     expect(screen.getByLabelText('Senha')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Github' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Gmail' })).toBeInTheDocument()

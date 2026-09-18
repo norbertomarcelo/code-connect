@@ -30,4 +30,28 @@ describe('Button', () => {
     expect(button).toBeDisabled()
     expect(onClick).not.toHaveBeenCalled()
   })
+  it.each(['primary', 'outline', 'secondary', 'ghost'] as const)(
+    'renders the %s variant as an enabled button',
+    (variant) => {
+      render(<Button variant={variant}>Publicar</Button>)
+
+      expect(screen.getByRole('button', { name: 'Publicar' })).toBeEnabled()
+    },
+  )
+
+  it('renders a material icon after the label without leaking its name', () => {
+    render(
+      <Button icon="upload" variant="secondary">
+        Publicar
+      </Button>,
+    )
+
+    expect(screen.getByRole('button', { name: 'Publicar' })).toBeInTheDocument()
+  })
+
+  it('accepts the small size', () => {
+    render(<Button size="sm">Limpar tudo</Button>)
+
+    expect(screen.getByRole('button', { name: 'Limpar tudo' })).toBeInTheDocument()
+  })
 })

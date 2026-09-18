@@ -3,6 +3,7 @@ import axios from 'axios'
 export type ApiErrorKind =
   | 'validation'
   | 'unauthorized'
+  | 'not-found'
   | 'conflict'
   | 'network'
   | 'server'
@@ -37,6 +38,7 @@ export class ApiError extends Error {
 function kindFor(status: number | null): ApiErrorKind {
   if (status === null) return 'network'
   if (status === 401) return 'unauthorized'
+  if (status === 404) return 'not-found'
   if (status === 409) return 'conflict'
   if (status === 422) return 'validation'
   if (status >= 500) return 'server'

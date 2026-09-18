@@ -45,6 +45,15 @@ describe('normalizeError', () => {
     expect(error.messages).toEqual(['Unauthorized'])
   })
 
+  it('maps a 404 to not-found', () => {
+    const error = normalizeError(
+      axiosError(404, { message: 'Post not found', statusCode: 404 }),
+    )
+
+    expect(error.kind).toBe('not-found')
+    expect(error.messages).toEqual(['Post not found'])
+  })
+
   it('maps a response-less failure to a network error', () => {
     const error = normalizeError(axiosError(null))
 

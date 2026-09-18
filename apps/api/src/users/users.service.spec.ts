@@ -1,13 +1,26 @@
 import { ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { sql } from 'drizzle-orm';
+import { createTestDatabase } from '../../test/support/test-database.js';
+import { DRIZZLE } from '../database/database.constants.js';
 import { UsersService } from './users.service.js';
 
 describe('UsersService', () => {
   let service: UsersService;
+  let testDb: Awaited<ReturnType<typeof createTestDatabase>>;
+
+  beforeAll(async () => {
+    testDb = await createTestDatabase();
+  });
+
+  afterAll(async () => {
+    await testDb.close();
+  });
 
   beforeEach(async () => {
+    await testDb.db.execute(sql`TRUNCATE users`);
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UsersService],
+      providers: [UsersService, { provide: DRIZZLE, useValue: testDb.db }],
     }).compile();
 
     service = module.get(UsersService);
@@ -49,7 +62,7 @@ describe('UsersService', () => {
       password: 'super-secret-1',
     });
 
-    expect(service.findByEmail('ada@example.com')?.name).toBe('Ada Lovelace');
-    expect(service.findByEmail('missing@example.com')).toBeUndefined();
+    expect((await service.findByEmail('ada@example.com'))?.name).toBe('Ada Lovelace');
+    expect(await service.findByEmail('missing@example.com')).toBeUndefined();
   });
 });

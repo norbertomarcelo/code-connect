@@ -1,7 +1,9 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { sql } from 'drizzle-orm';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { DRIZZLE, type Database } from '../src/database/database.constants.js';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;
@@ -20,6 +22,7 @@ describe('Auth (e2e)', () => {
       }),
     );
     await app.init();
+    await app.get<Database>(DRIZZLE).execute(sql`TRUNCATE users`);
 
     await request(app.getHttpServer()).post('/users').send({
       name: 'Ada Lovelace',

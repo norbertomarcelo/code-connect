@@ -1,17 +1,31 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
+import { sql } from 'drizzle-orm';
+import { createTestDatabase } from '../../test/support/test-database.js';
+import { DRIZZLE } from '../database/database.constants.js';
 import { UsersService } from '../users/users.service.js';
 import { AuthService } from './auth.service.js';
 
 describe('AuthService', () => {
   let authService: AuthService;
   let usersService: UsersService;
+  let testDb: Awaited<ReturnType<typeof createTestDatabase>>;
+
+  beforeAll(async () => {
+    testDb = await createTestDatabase();
+  });
+
+  afterAll(async () => {
+    await testDb.close();
+  });
 
   beforeEach(async () => {
+    await testDb.db.execute(sql`TRUNCATE users`);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         UsersService,
+        { provide: DRIZZLE, useValue: testDb.db },
         {
           provide: JwtService,
           useValue: new JwtService({

@@ -10,6 +10,8 @@
     "dev:api": "pnpm --filter api start:dev",
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",
-    "test": "pnpm -r run test"
+    "test": "pnpm -r run test",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down"
   }
 }

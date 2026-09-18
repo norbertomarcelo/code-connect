@@ -50,6 +50,23 @@ pnpm api exec vitest run -t "should return"
 
 **Web TypeScript** uses bundler mode with `verbatimModuleSyntax` (type-only imports need `import type`), `erasableSyntaxOnly` (no `enum`s or parameter properties), and `noUnusedLocals`/`noUnusedParameters`. `pnpm web build` runs `tsc -b` before `vite build`, so type errors fail the build.
 
+## Database (`apps/api`)
+
+PostgreSQL 18 runs from `docker-compose.yml` at the repo root, with the named volume `postgres-data` keeping the data across restarts (`docker compose down -v` wipes it). The ORM is Drizzle (`drizzle-orm` + `pg`); the rationale is in `plan/banco-de-dados.md`.
+
+```bash
+pnpm db:up                  # start postgres and wait until healthy
+pnpm db:down                # stop it (data stays in the volume)
+pnpm api db:generate        # generate a SQL migration in apps/api/drizzle after editing the schema
+pnpm api db:migrate         # apply migrations to DATABASE_URL
+```
+
+- The schema lives in `apps/api/src/database/schema.ts`; entity types are inferred from it (`$inferSelect`). Commit the generated migrations.
+- `DATABASE_URL` defaults to the compose database (see `apps/api/.env.example`). The API does not run migrations on startup, so run `pnpm api db:migrate` after `pnpm db:up`.
+- Unit tests run against PGlite (in-process Postgres, no Docker) via `test/support/test-database.ts`. E2E tests need `pnpm db:up` first: they use the separate `codeconnect_test` database, migrated by the vitest global setup and truncated in each spec's `beforeEach`.
+- `docker/postgres/init/` only runs when the volume is first created; on an existing volume, create `codeconnect_test` by hand.
+- Services that touch the database must be `async`. `no-floating-promises` catches a missing `await`.
+
 ## Frontend rules (`apps/web`)
 
 **Tailwind, routing and testing are installed.** Tailwind runs via `@tailwindcss/vite` (no `tailwind.config.*`; tokens live in the `@theme` block of `src/index.css`). Routing is `react-router`, wired in `src/App.tsx`. Tests run with Vitest + React Testing Library (`jsdom`), configured in the `test` block of `apps/web/vite.config.ts` with `src/test/setup.ts` as the setup file. `pnpm web test` runs them once; `pnpm web test:watch` watches. The root `pnpm test` runs both apps. `src/test/renderWithRouter.tsx` wraps `render` in a `MemoryRouter` for any component that renders a `Link` (most atoms don't need it; molecules/organisms/pages that use `TextLink` do).

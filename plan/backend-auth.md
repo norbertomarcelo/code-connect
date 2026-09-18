@@ -10,7 +10,7 @@ Esta tarefa implementa o backend correspondente em `apps/api`, que hoje é só o
 2. `POST /auth/login` — login (retorna JWT)
 3. `GET /auth/me` — dados do usuário logado, protegido por guard, seguindo o padrão oficial de autenticação do NestJS (Passport strategies + guards)
 
-Armazenamento em memória (array), sem ORM/banco — isso é explícito e intencional nesta fase.
+Armazenamento em memória (array), sem ORM/banco — isso era explícito e intencional nesta fase. **Atualização:** o array foi substituído por PostgreSQL + Drizzle, veja `plan/banco-de-dados.md`.
 
 Duas decisões que os planos do frontend deixavam em aberto foram confirmadas com o usuário:
 - Login usa o campo `email` (não `identifier`), já que hoje não existe username.

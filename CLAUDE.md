@@ -66,6 +66,9 @@ pnpm api db:migrate         # apply migrations to DATABASE_URL
 - Unit tests run against PGlite (in-process Postgres, no Docker) via `test/support/test-database.ts`. E2E tests need `pnpm db:up` first: they use the separate `codeconnect_test` database, migrated by the vitest global setup and truncated in each spec's `beforeEach`.
 - `docker/postgres/init/` only runs when the volume is first created; on an existing volume, create `codeconnect_test` by hand.
 - Services that touch the database must be `async`. `no-floating-promises` catches a missing `await`.
+- Specs reset the database through `test/support/reset-database.ts` (one `TRUNCATE ... CASCADE` over every table). **Add a new table to it**, or foreign keys will make `TRUNCATE users` fail in every spec.
+- `pnpm api db:seed` fills the database with mock users, tags, posts, likes and comments (`apps/api/scripts/seed.ts`, logic in `seed-database.ts`, which has its own PGlite spec). It truncates first, so it is idempotent. Log in as `julio@codeconnect.dev` / `code-connect-2026`. A few posts have no thumbnail and one has a dead image URL on purpose, to exercise the frontend placeholder.
+- **Full-text search.** drizzle-orm has no full-text helpers: `posts.search_vector` is a `customType` generated `tsvector` (`'portuguese'`, weighted title > description > body) with a GIN index, and queries use raw `sql` fragments (`@@ websearch_to_tsquery`, `ts_rank`). User input is always a bound parameter. **Never run `drizzle-kit push` or `studio` against this schema**: Postgres normalizes the generated expression, so `push` tries to recreate the column every time. Use `db:generate` + `db:migrate`, and read the generated SQL by hand.
 
 ## Frontend rules (`apps/web`)
 
@@ -99,6 +102,17 @@ src/pages/     # templates filled with real data and state
 - **Registration does not log in.** `POST /users` returns no token, so `SignupPage` redirects to `/login` with `{ notice, email, remember }` in the router state.
 - **Testing.** No MSW. Component and page tests use `src/test/renderWithAuth.tsx`, which stubs the auth context (override pieces with `auth: { signIn }`). Tests that need the real provider `vi.mock` our own `src/lib/api/auth` and `src/lib/api/users` modules, not axios. Throw `ApiError` (from `src/lib/api/errors.ts`, deliberately a separate module so it is never mocked) to simulate failures.
 
+## Posts feed (`apps/web`)
+
+- **Layout route.** `App.tsx` nests the feed, post, publish, profile and about pages under a layout route (`AppShell` + `<Outlet />`), so the sidebar mounts once. `AppShell` owns the `<main>` landmark, like `AuthTemplate`: **pages render their own `<h1>` and never a `<main>`** (this includes anything that renders inside it, such as `ProtectedRoute`'s loading state). Page a11y tests render inside `AppShell`, which is the real composition and what catches duplicate landmarks.
+- **URL is the state of the feed.** `q`, `tags` (comma-separated slugs), `sort` and `page` live in the query string, so a filtered feed is a shareable link and the back button works. Typing goes through `useDebouncedCallback` and writes with `replace`; chips and sort write with a push. Any filter change resets `page`. `LoginPage` sends a visitor back to `from.pathname + from.search`.
+- **`src/hooks/`** (`useAsyncData`, `useDebouncedCallback`) and **`src/posts/`** (`messages.ts`, pt-BR copy for post errors) sit outside Atomic Design for the same reason as `src/auth/` and `src/lib/`. `useAsyncData(load, deps)` takes an explicit list of primitives (it is serialized into a key, and a result only counts while its key is current, which discards responses that arrive out of order); it exposes `reload` and `setData` for optimistic updates. Pass `status` from `useAuth()` in `deps` when the response depends on the token.
+- **Icons.** `Icon` renders Material Symbols as ligatures (`<span aria-hidden translate="no">account_circle</span>`) and keeps the inline SVG map for `arrow-right`, `clipboard` and `login`. The SVG map wins when a name is in both. The font link uses `display=block` so the ligature name is never shown as text while it loads. Never query an icon with `getByText`.
+- **Font sizes use the default Tailwind tokens** (`text-sm`, `text-lg`, `text-xl`...), never `text-[Npx]`. Colors come from `@theme`: `graphite` is the feed shell background, `page` is both the body and the feed card/sidebar surface, and `surface` is the darker auth card and code panel.
+- **`PostThumbnail`** is the image placeholder: it falls back both when `src` is `null` and when the image fails to load. Use it for any post image.
+- **Test helpers.** `renderWithRouter` and `renderWithAuth` accept a `route` with a query string (`'/feed?tags=react'`). `src/test/fixtures.ts` has `makePost`, `makePostDetail`, `makeComment` and `makeThread`. Pages mock `src/lib/api/*` with `vi.mock`, never axios.
+- The signed-out sidebar item is **Login**, the signed-in one is **Sair**, and neither shows while the session is still being validated.
+
 ## Backend rules (`apps/api`): REST
 
 Every endpoint must follow REST conventions:
@@ -121,6 +135,15 @@ Every endpoint must follow REST conventions:
 - **Query params for collections.** Use query params for filtering, sorting, and pagination (`GET /posts?author=42&sort=-createdAt&page=2&limit=20`), never path segments or request bodies. Paginated responses include the pagination metadata.
 - **JSON representations.** Request and response bodies are JSON with camelCase fields. Use DTOs for input and output, and don't expose persistence entities directly.
 - **Stateless.** Each request carries everything needed to handle it (for example, auth in the `Authorization` header). Keep no client session state on the server.
+
+## Posts feed (`apps/api`)
+
+- **Anonymous reads, authenticated writes.** `GET /posts` and `GET /posts/:id` use `OptionalJwtAuthGuard`: a valid token fills `request.user`, a missing or invalid one leaves it `undefined` instead of raising 401, so the feed can tell whether the caller liked each post. Writes use `JwtAuthGuard`. `@CurrentUser()` returns `AuthenticatedUser | undefined` and TypeScript does not check the parameter annotation against the guard: annotate `AuthenticatedUser` behind `JwtAuthGuard` and `AuthenticatedUser | undefined` behind the optional one.
+- **Every `:id` param uses `ParseUUIDPipe`**, so a malformed id is a 400 instead of a Postgres error surfacing as 500. Validation errors stay 422 (`ValidationPipe`), malformed ids are 400.
+- **Never expose an author's email.** The feed is public. Authors are `{ id, name, handle }`, with the handle derived from the email local part in `users/handle.ts` (not unique, no `username` column yet).
+- **Comments nest one level.** `parentId` is a self-FK, and the service rejects a reply to a reply with 422; Postgres cannot express that rule. Comments are exposed at `/posts/:postId/comments` and `/comments/:id`, so a created comment's `Location` resolves.
+- **Likes:** `POST /posts/:id/likes` (201, 409 if already liked, the composite PK raises the 23505) and an idempotent `DELETE` (204 even without a like).
+- Service specs boot one PGlite each; `vitest.config.ts` raises `hookTimeout` so several starting at once do not flake.
 
 ## Git: Conventional Commits
 

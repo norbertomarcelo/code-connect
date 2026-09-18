@@ -457,3 +457,30 @@ Conferir o schema aplicado com `\d+ posts` e `\di posts*`, e rodar um `ts_rank` 
 - URLs de imagem externas no seed dependem de rede; uma é quebrada de propósito, as outras podem quebrar sozinhas.
 - Mensagens 422 do class-validator seguem em inglês, mapeadas por prefixo de campo — mudar nome de propriedade no DTO quebra o mapeamento em silêncio.
 - `App.tsx` continua sem teste, agora carregando também o `AppLayout`.
+
+---
+
+## Notas pós-implementação
+
+Registro de onde a implementação divergiu do plano acima, e por quê. O plano em si não foi reescrito.
+
+- **Escala tipográfica customizada removida.** O plano previa tokens `--text-paragraph-*` e `text-[2rem]`. A regra do projeto (tamanhos de fonte usam os tokens padrão do Tailwind, nunca valores arbitrários) prevaleceu: 15px → `text-sm`, 18px → `text-lg`, 22px → `text-xl`, ícone de 32px → `text-3xl`. Sobraram só `--color-graphite` e `--font-icon` no `@theme`.
+- **`useDebouncedValue` virou `useDebouncedCallback`.** O lint do web tem `exhaustive-deps`. Derivar a URL de um valor com debounce exigiria `q` nas deps do effect, e ao voltar no histórico ele reescreveria a URL, brigando com o botão voltar. O debounce agora é disparado pelo evento de digitação e expõe `cancel` (necessário para "Limpar tudo" não trazer de volta um texto pendente).
+- **`useAsyncData` deriva "carregando" da chave** em vez de dar `setState` síncrono num effect (o lint acusa `set-state-in-effect`). A descoberta de resposta atrasada continua garantida, agora pela comparação de chave.
+- **`TagFilterBar` recebe as tags disponíveis e as selecionadas** (`tags`, `selected`, `onAdd`, `onRemove`, `onClear`), porque o Figma mostra chips ativos removíveis *e* chips disponíveis para adicionar. A `FeedPage` carrega `GET /tags` por isso, e se falhar a barra some sem quebrar o feed.
+- **Ícone de compartilhar omitido do card.** Não existe dado de compartilhamento; mostrar um número inventado seria pior que omitir.
+- **Campo "Código" adicionado ao formulário de publicar.** O Figma não tem, mas o modelo exige `body` e o detalhe tem a seção "Código:".
+- **Painel de comentários com `bg-page`** (escuro) em vez do cinza do Figma: o `Textarea` usa `bg-input` e ficaria invisível sobre um painel da mesma cor.
+- **Tags do card visíveis** (`bg-muted`): no Figma elas têm a mesma cor do fundo do card e não aparecem.
+- **Novos componentes fora da lista original:** `TextareaField` (molecule, mesmo padrão do `FormField`), `PostHeader` (organism, o topo do post reaproveitando as molecules do card) e `test/fixtures.ts`.
+- **`ProtectedRoute` perdeu o `<main>` do estado de carregamento**, que passou a aninhar dentro do `<main>` do `AppShell`.
+- **`LoginPage` preserva a query string** do destino (`from.pathname + from.search`); antes só usava o `pathname`, e quem curtia em `/feed?tags=react` voltava sem filtro.
+- **`vitest.config.ts` (api) ganhou `hookTimeout: 60_000`.** Com mais specs de serviço, várias instâncias de PGlite iniciando juntas estouravam o limite padrão de 10s em máquina ocupada.
+- **Seed testável:** a lógica saiu de `seed.ts` para `seed-database.ts` (`seedDatabase(db)`), coberta por um spec contra PGlite; `seed.ts` só abre o `Pool` e chama.
+- **Logo:** o `logo.svg` foi montado a partir dos três grupos vetoriais exportados do Figma, posicionados pelos mesmos insets do design. O export do nó inteiro trazia o canvas do design system junto.
+
+### Não verificado
+
+- **Os testes e2e do api (`pnpm api test:e2e`) foram escritos mas não executados**: o Docker não está acessível neste ambiente (permissão no socket), então não há Postgres para o e2e. Os specs unitários (PGlite) e o typecheck passam. Rodar `pnpm db:up && pnpm api test:e2e` antes de confiar neles.
+- **O fluxo completo contra o Postgres real** (`db:migrate` + `db:seed` + `pnpm dev`) também não foi exercitado. A UI foi verificada visualmente contra uma API falsa só-leitura; login, cadastro, curtir, comentar e publicar contra o backend real seguem por verificar.
+

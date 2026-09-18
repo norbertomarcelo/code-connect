@@ -3,6 +3,7 @@ import type { ReactElement } from 'react'
 import { MemoryRouter } from 'react-router'
 import { AuthContext } from '../auth/AuthContext'
 import type { AuthContextValue } from '../auth/AuthContext'
+import { toLocationEntry } from './renderWithRouter'
 
 const anonymousAuth: AuthContextValue = {
   user: null,
@@ -34,7 +35,7 @@ export function renderWithAuth(
 
   return {
     ...render(
-      <MemoryRouter initialEntries={[{ pathname: route, state }]}>
+      <MemoryRouter initialEntries={[toLocationEntry(route, state)]}>
         <AuthContext.Provider value={value}>{ui}</AuthContext.Provider>
       </MemoryRouter>,
     ),

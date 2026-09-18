@@ -23,7 +23,7 @@ export function FormField({ label, error, id, ...inputProps }: FormFieldProps) {
         {...inputProps}
       />
       {error ? (
-        <p id={errorId} className="mt-1 text-sm text-red-400">
+        <p id={errorId} className="mt-1 text-sm text-danger">
           {error}
         </p>
       ) : null}

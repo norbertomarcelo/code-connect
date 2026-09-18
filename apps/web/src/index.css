@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 @theme {
+  /* Grafite: app shell background (feed). Darker than the cards on top of it. */
+  --color-graphite: #00090e;
+  /* Cinza Escuro: the body background AND the feed card/sidebar surface. */
   --color-page: #171d1f;
   --color-surface: #0d1214;
   --color-primary: #81fe88;
@@ -10,6 +13,15 @@
   --color-danger: #ff6b6b;
 
   --font-sans: "Prompt", sans-serif;
+  --font-icon: "Material Symbols Outlined";
+
+  /* Figma type scale: Prompt, line-height 1.5 */
+  --text-paragraph-sm: 0.9375rem;
+  --text-paragraph-sm--line-height: 1.5;
+  --text-paragraph: 1.125rem;
+  --text-paragraph--line-height: 1.5;
+  --text-paragraph-lg: 1.375rem;
+  --text-paragraph-lg--line-height: 1.5;
 }
 
 body {

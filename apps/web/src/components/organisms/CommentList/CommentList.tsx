@@ -28,7 +28,7 @@ export function CommentList({
       {comments.length === 0 ? (
         <p className="text-sm">Ainda não há comentários.</p>
       ) : (
-        <ul className="flex flex-col gap-6 divide-y divide-muted/30 [&>li]:pt-6 [&>li:first-child]:pt-0">
+        <ul className="flex flex-col divide-y divide-muted/30 [&>li]:py-6 [&>li:first-child]:pt-0 [&>li:last-child]:pb-0">
           {comments.map((comment) => (
             <CommentItem
               key={comment.id}

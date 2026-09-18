@@ -1,11 +1,47 @@
-export type IconName = 'arrow-right' | 'clipboard' | 'login'
+export type SvgIconName = 'arrow-right' | 'clipboard' | 'login'
+
+/**
+ * Material Symbols are rendered as ligatures: the glyph name IS the text
+ * content. Never add a name here that already exists in `SvgIconName`: the SVG
+ * map is checked first and would silently win.
+ */
+export type MaterialIconName =
+  | 'feed'
+  | 'account_circle'
+  | 'info'
+  | 'logout'
+  | 'search'
+  | 'close'
+  | 'code'
+  | 'share'
+  | 'chat'
+  | 'image'
+  | 'upload'
+  | 'delete'
+  | 'expand_more'
+  | 'expand_less'
+  | 'chevron_left'
+  | 'chevron_right'
+
+export type IconName = SvgIconName | MaterialIconName
+
+export type IconSize = 'sm' | 'md' | 'lg'
 
 interface IconProps {
   name: IconName
+  size?: IconSize
   className?: string
 }
 
-const paths: Record<IconName, React.ReactNode> = {
+const svgSize: Record<IconSize, number> = { sm: 20, md: 24, lg: 32 }
+
+const glyphSize: Record<IconSize, string> = {
+  sm: 'text-xl',
+  md: 'text-2xl',
+  lg: 'text-3xl',
+}
+
+const paths: Record<SvgIconName, React.ReactNode> = {
   'arrow-right': (
     <path
       d="M5 12h14M13 6l6 6-6 6"
@@ -44,17 +80,43 @@ const paths: Record<IconName, React.ReactNode> = {
   ),
 }
 
-export function Icon({ name, className }: IconProps) {
+function isSvgIcon(name: IconName): name is SvgIconName {
+  return name in paths
+}
+
+export function Icon({ name, size = 'sm', className }: IconProps) {
+  if (isSvgIcon(name)) {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        width={svgSize[size]}
+        height={svgSize[size]}
+        className={className}
+        role="presentation"
+        aria-hidden="true"
+      >
+        {paths[name]}
+      </svg>
+    )
+  }
+
   return (
-    <svg
-      viewBox="0 0 24 24"
-      width="20"
-      height="20"
-      className={className}
-      role="presentation"
+    <span
+      // aria-hidden keeps the ligature text ("account_circle") out of the
+      // accessibility tree; translate="no" keeps machine translation from
+      // rewriting it and destroying the glyph. The fixed box and
+      // overflow-hidden cap the damage if the icon font never loads.
       aria-hidden="true"
+      translate="no"
+      className={[
+        'inline-flex shrink-0 select-none items-center justify-center overflow-hidden font-icon leading-none',
+        glyphSize[size],
+        className ?? '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
-      {paths[name]}
-    </svg>
+      {name}
+    </span>
   )
 }

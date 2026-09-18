@@ -14,14 +14,6 @@
 
   --font-sans: "Prompt", sans-serif;
   --font-icon: "Material Symbols Outlined";
-
-  /* Figma type scale: Prompt, line-height 1.5 */
-  --text-paragraph-sm: 0.9375rem;
-  --text-paragraph-sm--line-height: 1.5;
-  --text-paragraph: 1.125rem;
-  --text-paragraph--line-height: 1.5;
-  --text-paragraph-lg: 1.375rem;
-  --text-paragraph-lg--line-height: 1.5;
 }
 
 body {

@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
@@ -11,6 +14,8 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiNoContentResponse,
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiNotFoundResponse,
@@ -30,6 +35,7 @@ import { ListPostsQueryDto } from './dto/list-posts-query.dto.js';
 import {
   PaginatedPostsResponseDto,
   PostDetailResponseDto,
+  PostLikeResponseDto,
 } from './dto/post-response.dto.js';
 import { toPostDetailDto, toPostSummaryDto } from './post.mapper.js';
 import { PostsService } from './posts.service.js';
@@ -98,5 +104,44 @@ export class PostsController {
     const post = await this.postsService.create(user.id, dto);
     response.setHeader('Location', `/posts/${post.id}`);
     return toPostDetailDto(post);
+  }
+
+  @Post(':id/likes')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Like a post as the current user' })
+  @ApiCreatedResponse({ type: PostLikeResponseDto })
+  @ApiBadRequestResponse({ description: 'Malformed id' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid token' })
+  @ApiNotFoundResponse({ description: 'Post not found' })
+  @ApiConflictResponse({ description: 'Post already liked' })
+  async like(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<PostLikeResponseDto> {
+    const summary = await this.postsService.like(id, user.id);
+    response.setHeader('Location', `/posts/${id}/likes`);
+    return {
+      postId: summary.postId,
+      likeCount: summary.likeCount,
+      viewerHasLiked: summary.viewerHasLiked,
+    };
+  }
+
+  @Delete(':id/likes')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Remove the current user's like (idempotent)" })
+  @ApiNoContentResponse({ description: 'Like removed, or there was none' })
+  @ApiBadRequestResponse({ description: 'Malformed id' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid token' })
+  @ApiNotFoundResponse({ description: 'Post not found' })
+  async unlike(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.postsService.unlike(id, user.id);
   }
 }

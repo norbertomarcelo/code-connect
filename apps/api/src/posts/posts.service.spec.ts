@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { createTestDatabase } from '../../test/support/test-database.js';
 import { resetDatabase } from '../../test/support/reset-database.js';
@@ -218,5 +218,49 @@ describe('PostsService', () => {
     await expect(
       service.findOne('00000000-0000-0000-0000-000000000000'),
     ).rejects.toThrow(NotFoundException);
+  });
+
+  describe('likes', () => {
+    it('likes a post once and reports the new count', async () => {
+      const post = await publish();
+
+      expect(await service.like(post.id, authorId)).toEqual({
+        postId: post.id,
+        likeCount: 1,
+        viewerHasLiked: true,
+      });
+    });
+
+    it('rejects a second like from the same user', async () => {
+      const post = await publish();
+      await service.like(post.id, authorId);
+
+      await expect(service.like(post.id, authorId)).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('unlikes, and unliking twice is not an error', async () => {
+      const post = await publish();
+      await service.like(post.id, authorId);
+
+      await service.unlike(post.id, authorId);
+      await service.unlike(post.id, authorId);
+
+      expect((await service.findOne(post.id, authorId)).viewerHasLiked).toBe(
+        false,
+      );
+    });
+
+    it('404s when the post does not exist', async () => {
+      const missing = '00000000-0000-0000-0000-000000000000';
+
+      await expect(service.like(missing, authorId)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.unlike(missing, authorId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
   });
 });

@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { and, desc, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import { DRIZZLE, type Database } from '../database/database.constants.js';
 import {
@@ -9,6 +14,7 @@ import {
   tags,
   users,
 } from '../database/schema.js';
+import { isUniqueViolation } from '../database/unique-violation.js';
 import { TagsService, type TagRow } from '../tags/tags.service.js';
 import { toHandle } from '../users/handle.js';
 import type { CreatePostDto } from './dto/create-post.dto.js';
@@ -28,6 +34,12 @@ export interface PostSummary {
 
 export interface PostDetail extends PostSummary {
   body: string;
+}
+
+export interface PostLikeSummary {
+  postId: string;
+  likeCount: number;
+  viewerHasLiked: boolean;
 }
 
 export interface ListPostsParams {
@@ -249,5 +261,52 @@ export class PostsService {
     });
 
     return this.findOne(created.id, authorId);
+  }
+
+  private async ensureExists(postId: string): Promise<void> {
+    const [post] = await this.db
+      .select({ id: posts.id })
+      .from(posts)
+      .where(eq(posts.id, postId))
+      .limit(1);
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+  }
+
+  /** Only called right after a like, so the viewer has liked by definition. */
+  private async likeSummary(postId: string): Promise<PostLikeSummary> {
+    const [{ likeCount }] = await this.db
+      .select({ likeCount: sql<number>`count(*)`.mapWith(Number) })
+      .from(postLikes)
+      .where(eq(postLikes.postId, postId));
+
+    return { postId, likeCount, viewerHasLiked: true };
+  }
+
+  async like(postId: string, userId: string): Promise<PostLikeSummary> {
+    await this.ensureExists(postId);
+
+    try {
+      await this.db.insert(postLikes).values({ postId, userId });
+    } catch (error) {
+      // The composite PK turns a second like into 23505.
+      if (isUniqueViolation(error)) {
+        throw new ConflictException('Post already liked');
+      }
+      throw error;
+    }
+
+    return this.likeSummary(postId);
+  }
+
+  /** Idempotent: unliking a post that was not liked is not an error. */
+  async unlike(postId: string, userId: string): Promise<void> {
+    await this.ensureExists(postId);
+
+    await this.db
+      .delete(postLikes)
+      .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)));
   }
 }

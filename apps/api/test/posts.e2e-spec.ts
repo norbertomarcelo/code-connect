@@ -149,4 +149,51 @@ describe('Posts (e2e)', () => {
       .expect(404);
     await request(app.getHttpServer()).get('/posts/abc').expect(400);
   });
+
+  describe('likes', () => {
+    it('POST /posts/:id/likes requires a token', async () => {
+      const created = await publish({});
+
+      await request(app.getHttpServer())
+        .post(`/posts/${created.body.id}/likes`)
+        .expect(401);
+    });
+
+    it('likes once, rejects a repeat with 409, and unlikes with 204', async () => {
+      const created = await publish({});
+      const url = `/posts/${created.body.id}/likes`;
+      const auth = { Authorization: `Bearer ${token}` };
+
+      const liked = await request(app.getHttpServer())
+        .post(url)
+        .set(auth)
+        .expect(201);
+      expect(liked.body).toEqual({
+        postId: created.body.id,
+        likeCount: 1,
+        viewerHasLiked: true,
+      });
+
+      await request(app.getHttpServer()).post(url).set(auth).expect(409);
+
+      const feed = await request(app.getHttpServer())
+        .get('/posts')
+        .set(auth)
+        .expect(200);
+      expect(feed.body.items[0]).toMatchObject({
+        likeCount: 1,
+        viewerHasLiked: true,
+      });
+
+      await request(app.getHttpServer()).delete(url).set(auth).expect(204);
+      await request(app.getHttpServer()).delete(url).set(auth).expect(204);
+    });
+
+    it('returns 404 for a post that does not exist', async () => {
+      await request(app.getHttpServer())
+        .post('/posts/00000000-0000-0000-0000-000000000000/likes')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(404);
+    });
+  });
 });

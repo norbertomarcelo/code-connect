@@ -55,3 +55,14 @@ export class PaginatedPostsResponseDto {
   @ApiProperty()
   totalPages!: number;
 }
+
+export class PostLikeResponseDto {
+  @ApiProperty()
+  postId!: string;
+
+  @ApiProperty()
+  likeCount!: number;
+
+  @ApiProperty()
+  viewerHasLiked!: boolean;
+}

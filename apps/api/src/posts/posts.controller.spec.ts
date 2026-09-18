@@ -11,6 +11,8 @@ describe('PostsController', () => {
     list: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
+    like: ReturnType<typeof vi.fn>;
+    unlike: ReturnType<typeof vi.fn>;
   };
 
   const fakeResponse = { setHeader: vi.fn() } as unknown as Response;
@@ -29,7 +31,13 @@ describe('PostsController', () => {
   };
 
   beforeEach(async () => {
-    postsService = { list: vi.fn(), findOne: vi.fn(), create: vi.fn() };
+    postsService = {
+      list: vi.fn(),
+      findOne: vi.fn(),
+      create: vi.fn(),
+      like: vi.fn(),
+      unlike: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PostsController],
@@ -101,5 +109,34 @@ describe('PostsController', () => {
       '/posts/post-1',
     );
     expect(result.body).toBe('código');
+  });
+
+  it('likes a post for the current user and sets the Location header', async () => {
+    postsService.like.mockResolvedValue({
+      postId: 'post-1',
+      likeCount: 3,
+      viewerHasLiked: true,
+    });
+
+    const result = await controller.like('post-1', viewer, fakeResponse);
+
+    expect(postsService.like).toHaveBeenCalledWith('post-1', 'user-1');
+    expect(fakeResponse.setHeader).toHaveBeenCalledWith(
+      'Location',
+      '/posts/post-1/likes',
+    );
+    expect(result).toEqual({
+      postId: 'post-1',
+      likeCount: 3,
+      viewerHasLiked: true,
+    });
+  });
+
+  it('unlikes a post for the current user', async () => {
+    postsService.unlike.mockResolvedValue(undefined);
+
+    await controller.unlike('post-1', viewer);
+
+    expect(postsService.unlike).toHaveBeenCalledWith('post-1', 'user-1');
   });
 });

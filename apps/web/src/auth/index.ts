@@ -5,4 +5,5 @@ export type {
   SignInCredentials,
 } from './AuthContext'
 export { AuthProvider } from './AuthProvider'
+export { ProtectedRoute } from './ProtectedRoute'
 export { useAuth } from './useAuth'

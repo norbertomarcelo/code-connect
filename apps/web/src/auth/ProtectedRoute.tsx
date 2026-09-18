@@ -11,12 +11,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation()
 
   if (status === 'loading') {
+    // No <main> of its own: it renders inside the AppShell, which owns it.
     return (
-      <main className="flex min-h-screen items-center justify-center p-4">
-        <p role="status" className="text-offwhite">
-          Carregando...
-        </p>
-      </main>
+      <p role="status" className="text-center text-muted">
+        Carregando...
+      </p>
     )
   }
 

@@ -29,6 +29,12 @@ describe('ProtectedRoute', () => {
     expect(screen.queryByText('conteúdo privado')).not.toBeInTheDocument()
   })
 
+  it('does not add a main landmark while loading, so it can sit inside the app shell', () => {
+    renderRoute('loading')
+
+    expect(screen.queryByRole('main')).not.toBeInTheDocument()
+  })
+
   it('redirects anonymous users to /login', () => {
     renderRoute('anonymous')
 

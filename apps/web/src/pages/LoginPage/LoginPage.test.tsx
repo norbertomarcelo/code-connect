@@ -1,10 +1,15 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { Route, Routes } from 'react-router'
+import { Route, Routes, useLocation } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../lib/api/errors'
 import { renderWithAuth } from '../../test/renderWithAuth'
 import { LoginPage } from './LoginPage'
+
+function LocationProbe() {
+  const { search } = useLocation()
+  return <p data-testid="search">{search}</p>
+}
 
 function renderLoginRoutes(
   options: Parameters<typeof renderWithAuth>[1] = {},
@@ -12,7 +17,7 @@ function renderLoginRoutes(
   return renderWithAuth(
     <Routes>
       <Route path="/" element={<LoginPage />} />
-      <Route path="/inicio" element={<p>área logada</p>} />
+      <Route path="/feed" element={<p>área logada</p>} />
     </Routes>,
     options,
   )
@@ -44,7 +49,7 @@ describe('LoginPage', () => {
     ).toHaveAttribute('href', '/cadastro')
   })
 
-  it('signs in with the typed credentials and goes to /inicio', async () => {
+  it('signs in with the typed credentials and goes to /feed', async () => {
     const signIn = vi.fn().mockResolvedValue(undefined)
     renderLoginRoutes({ auth: { signIn } })
 
@@ -56,6 +61,24 @@ describe('LoginPage', () => {
       remember: true,
     })
     expect(await screen.findByText('área logada')).toBeInTheDocument()
+  })
+
+  it('returns to the page the visitor came from, query string included', async () => {
+    const signIn = vi.fn().mockResolvedValue(undefined)
+    renderWithAuth(
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/feed" element={<LocationProbe />} />
+      </Routes>,
+      {
+        auth: { signIn },
+        state: { from: { pathname: '/feed', search: '?tags=react' } },
+      },
+    )
+
+    await fillAndSubmit()
+
+    expect(await screen.findByTestId('search')).toHaveTextContent('?tags=react')
   })
 
   it('shows an alert and re-enables the button when credentials are wrong', async () => {

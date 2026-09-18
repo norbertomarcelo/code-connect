@@ -13,7 +13,7 @@ interface LoginLocationState {
   notice?: string
   email?: string
   remember?: boolean
-  from?: { pathname?: string }
+  from?: { pathname?: string; search?: string }
 }
 
 function handleSocialSelect(provider: SocialProvider) {
@@ -28,7 +28,11 @@ export function LoginPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const state = (location.state ?? null) as LoginLocationState | null
-  const redirectTo = state?.from?.pathname ?? '/inicio'
+  // Keep the query string: a visitor sent here from `/feed?tags=react` should
+  // come back to the same filtered feed.
+  const redirectTo = state?.from?.pathname
+    ? `${state.from.pathname}${state.from.search ?? ''}`
+    : '/feed'
 
   async function handleSubmit(values: LoginFormValues) {
     setIsSubmitting(true)

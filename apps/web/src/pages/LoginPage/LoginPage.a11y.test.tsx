@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { checkAccessibility } from '../../test/a11y'
-import { renderWithRouter } from '../../test/renderWithRouter'
+import { renderWithAuth } from '../../test/renderWithAuth'
 import { LoginPage } from './LoginPage'
 
 describe('LoginPage accessibility', () => {
   it('has no WCAG 2.1 AA violations', async () => {
-    const { container } = renderWithRouter(<LoginPage />)
+    const { container } = renderWithAuth(<LoginPage />)
 
     const results = await checkAccessibility(container)
 

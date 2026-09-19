@@ -18,5 +18,7 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
+  // Guards used outside this module resolve AuthModuleOptions through it.
+  exports: [PassportModule],
 })
 export class AuthModule {}

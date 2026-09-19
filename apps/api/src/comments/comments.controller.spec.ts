@@ -12,7 +12,8 @@ describe('CommentsController', () => {
     findOne: ReturnType<typeof vi.fn>;
   };
 
-  const fakeResponse = { setHeader: vi.fn() } as unknown as Response;
+  const setHeader = vi.fn();
+  const fakeResponse = { setHeader } as unknown as Response;
   const user = { id: 'user-1', name: 'Ada', email: 'ada@example.com' };
   const comment = {
     id: 'comment-1',
@@ -64,7 +65,7 @@ describe('CommentsController', () => {
     expect(commentsService.create).toHaveBeenCalledWith('post-1', 'user-1', {
       body: 'Boa!',
     });
-    expect(fakeResponse.setHeader).toHaveBeenCalledWith(
+    expect(setHeader).toHaveBeenCalledWith(
       'Location',
       '/comments/comment-1',
     );

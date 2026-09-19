@@ -7,7 +7,8 @@ describe('UsersController', () => {
   let controller: UsersController;
   let usersService: { create: ReturnType<typeof vi.fn> };
 
-  const fakeResponse = { setHeader: vi.fn() } as unknown as Response;
+  const setHeader = vi.fn();
+  const fakeResponse = { setHeader } as unknown as Response;
 
   beforeEach(async () => {
     usersService = { create: vi.fn() };
@@ -42,7 +43,7 @@ describe('UsersController', () => {
       name: 'Ada Lovelace',
       email: 'ada@example.com',
     });
-    expect(fakeResponse.setHeader).toHaveBeenCalledWith(
+    expect(setHeader).toHaveBeenCalledWith(
       'Location',
       '/users/user-1',
     );

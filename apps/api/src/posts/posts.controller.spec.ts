@@ -15,7 +15,8 @@ describe('PostsController', () => {
     unlike: ReturnType<typeof vi.fn>;
   };
 
-  const fakeResponse = { setHeader: vi.fn() } as unknown as Response;
+  const setHeader = vi.fn();
+  const fakeResponse = { setHeader } as unknown as Response;
   const viewer = { id: 'user-1', name: 'Ada', email: 'ada@example.com' };
   const summary = {
     id: 'post-1',
@@ -104,7 +105,7 @@ describe('PostsController', () => {
       'user-1',
       expect.any(Object),
     );
-    expect(fakeResponse.setHeader).toHaveBeenCalledWith(
+    expect(setHeader).toHaveBeenCalledWith(
       'Location',
       '/posts/post-1',
     );
@@ -121,7 +122,7 @@ describe('PostsController', () => {
     const result = await controller.like('post-1', viewer, fakeResponse);
 
     expect(postsService.like).toHaveBeenCalledWith('post-1', 'user-1');
-    expect(fakeResponse.setHeader).toHaveBeenCalledWith(
+    expect(setHeader).toHaveBeenCalledWith(
       'Location',
       '/posts/post-1/likes',
     );
